@@ -63,6 +63,14 @@ require('"android.hardware.thermal-service.qti.odm.rc"' in odm_blueprint,
         "ODM module must use its override init contract")
 require('"android.hardware.thermal-service.qti.odm.xml"' in odm_blueprint,
         "ODM module must use its HIDL-replacement VINTF contract")
+require(
+    'static_libs: ["android.hardware.thermal-V2-ndk"]' in odm_blueprint,
+    "ODM module must embed its AIDL NDK bindings instead of requiring a new ODM library",
+)
+require(
+    odm_blueprint.count('"android.hardware.thermal-V2-ndk"') == 1,
+    "ODM AIDL NDK bindings must not remain a shared runtime dependency",
+)
 
 odm_rc = (ROOT / "android.hardware.thermal-service.qti.odm.rc").read_text()
 odm_service = re.search(r"^service\s+(\S+)\s+(\S+)$", odm_rc, re.MULTILINE)

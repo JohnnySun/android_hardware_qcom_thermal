@@ -43,12 +43,12 @@ cc_binary {
 	shared_libs: [
 		"libbase",
 		"libbinder_ndk",
-		"android.hardware.thermal-V2-ndk",
 		"libcutils",
 		"libutils",
 		"liblog",
 		"libnl",
 	],
+	static_libs: ["android.hardware.thermal-V2-ndk"],
 	srcs: [
 		"service.cpp",
 		"thermal.cpp",
