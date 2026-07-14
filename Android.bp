@@ -24,11 +24,7 @@ cc_binary {
 		"thermalUtilsNetlink.cpp",
 		"thermalMonitorNetlink.cpp",
 	],
-	header_libs: [
-		"liblog_headers",
-		"libcutils_headers",
-		"qti_kernel_headers"
-	],
+	header_libs: ["liblog_headers", "libcutils_headers"],
 	cflags: [
 		"-Wno-unused-parameter",
 		"-Wno-unused-variable",
@@ -60,11 +56,7 @@ cc_fuzz {
         "thermalUtilsNetlink.cpp",
         "thermalMonitorNetlink.cpp",
     ],
-    header_libs: [
-        "liblog_headers",
-        "libcutils_headers",
-        "qti_kernel_headers"
-    ],
+    header_libs: ["liblog_headers", "libcutils_headers"],
 
     cflags: [
         "-Wno-unused-parameter",

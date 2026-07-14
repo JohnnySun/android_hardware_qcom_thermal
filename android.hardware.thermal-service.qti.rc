@@ -40,4 +40,4 @@ service vendor.thermal-hal /vendor/bin/hw/android.hardware.thermal-service.qti
 
 on boot
     wait /sys/kernel/boot_adsp/boot
-    restart android.thermal-hal
+    restart vendor.thermal-hal
