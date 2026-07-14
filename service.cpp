@@ -46,6 +46,7 @@ int main() {
 		AServiceManager_addService(therm->asBinder().get(), instance.c_str());
 
 		CHECK(status == STATUS_OK);
+		therm->startInitialization();
 	}
 
 	LOG(INFO) << "Thermal HAL Service AIDL started successfully.";

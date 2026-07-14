@@ -38,6 +38,7 @@ SPDX-License-Identifier: BSD-3-Clause-Clear */
 #include <inttypes.h>
 #include <stdlib.h>
 #include <cerrno>
+#include <exception>
 #include <mutex>
 #include <string>
 
@@ -62,22 +63,38 @@ bool interfacesEqual(const std::shared_ptr<::ndk::ICInterface>& left,
 
 }// namespace
 
-Thermal::Thermal():
-	utils(std::bind(&Thermal::sendThrottlingChangeCB, this,
-				std::placeholders::_1),
-		std::bind(&Thermal::sendCoolingDeviceChangeCB, this,
-				std::placeholders::_1))
-{ }
+Thermal::Thermal() = default;
+
+void Thermal::startInitialization() {
+	const bool started = utils_.start([this]() -> std::shared_ptr<ThermalUtils> {
+		try {
+			return std::make_shared<ThermalUtils>(
+					std::bind(&Thermal::sendThrottlingChangeCB, this,
+							std::placeholders::_1),
+					std::bind(&Thermal::sendCoolingDeviceChangeCB, this,
+							std::placeholders::_1));
+		} catch (const std::exception& error) {
+			LOG(ERROR) << "Thermal provider initialization failed: " << error.what();
+		} catch (...) {
+			LOG(ERROR) << "Thermal provider initialization failed";
+		}
+		return nullptr;
+	});
+	if (!started) {
+		LOG(ERROR) << "Unable to start thermal provider initialization";
+	}
+}
 
 ScopedAStatus Thermal::getCoolingDevices(std::vector<CoolingDevice>* out_data) {
 
 	std::vector<CoolingDevice> cdev;
+	auto utils = utils_.get();
 
-	if (!utils.isCdevInitialized())
+	if (!utils || !utils->isCdevInitialized())
 		return ndk::ScopedAStatus::fromExceptionCodeWithMessage(EX_ILLEGAL_STATE,
 						"ThermalHAL given cdev not initialized.");
 	else {
-		if (utils.readCdevStates(cdev) <= 0)
+		if (utils->readCdevStates(cdev) <= 0)
 			LOG(VERBOSE) << __func__ << "Failed to read thermal cooling devices.";
 	}
 
@@ -91,12 +108,13 @@ ScopedAStatus Thermal::getCoolingDevicesWithType(CoolingType in_type,
 				std::vector<CoolingDevice>* out_data) {
 
 	std::vector<CoolingDevice> cdev;
+	auto utils = utils_.get();
 
-	if (!utils.isCdevInitialized(in_type))
+	if (!utils || !utils->isCdevInitialized(in_type))
 		return ndk::ScopedAStatus::fromExceptionCodeWithMessage(EX_ILLEGAL_STATE,
 						"ThermalHAL given cdev type not initialized.");
 	else {
-		if (utils.readCdevStates(in_type, cdev) <= 0)
+		if (utils->readCdevStates(in_type, cdev) <= 0)
 			LOG(VERBOSE) << __func__ << "Failed to read thermal cooling devices.";
 	}
 
@@ -109,12 +127,13 @@ ScopedAStatus Thermal::getCoolingDevicesWithType(CoolingType in_type,
 ScopedAStatus Thermal::getTemperatures(std::vector<Temperature>* out_temp) {
 	LOG(VERBOSE) << __func__;
 	std::vector<Temperature> temperatures;
+	auto utils = utils_.get();
 
-	if (!utils.isSensorInitialized())
+	if (!utils || !utils->isSensorInitialized())
 		return ndk::ScopedAStatus::fromExceptionCodeWithMessage(EX_ILLEGAL_STATE,
 					"ThermalHAL sensor not initialized.");
 
-	if (utils.readTemperatures(temperatures) <= 0)
+	if (utils->readTemperatures(temperatures) <= 0)
 		return ndk::ScopedAStatus::fromExceptionCodeWithMessage(EX_ILLEGAL_STATE,
 					"Sensor temperature data is unavailable.");
 
@@ -128,11 +147,12 @@ ScopedAStatus Thermal::getTemperaturesWithType(TemperatureType in_type,
 					std::vector<Temperature>* out_temp) {
 
 	std::vector<Temperature> temperatures;
+	auto utils = utils_.get();
 
-	if (!utils.isSensorInitialized(in_type))
+	if (!utils || !utils->isSensorInitialized(in_type))
 		return ndk::ScopedAStatus::fromExceptionCodeWithMessage(EX_ILLEGAL_STATE,
 					"ThermalHAL given sensor type Not initialized.");
-	else if (utils.readTemperatures(in_type, temperatures) <= 0)
+	else if (utils->readTemperatures(in_type, temperatures) <= 0)
 		return ndk::ScopedAStatus::fromExceptionCodeWithMessage(EX_ILLEGAL_STATE,
 					"Sensor temperature data is unavailable.");
 
@@ -145,12 +165,13 @@ ScopedAStatus Thermal::getTemperaturesWithType(TemperatureType in_type,
 ScopedAStatus Thermal::getTemperatureThresholds(std::vector<TemperatureThreshold>* out_temp_thresh) {
 
 	std::vector<TemperatureThreshold> thresh;
+	auto utils = utils_.get();
 
-	if (!utils.isSensorInitialized())
+	if (!utils || !utils->isSensorInitialized())
 		return ndk::ScopedAStatus::fromExceptionCodeWithMessage(EX_ILLEGAL_STATE,
 					"ThermalHAL for sensor not initialized.");
 
-	if (utils.readTemperatureThreshold(thresh) <= 0)
+	if (utils->readTemperatureThreshold(thresh) <= 0)
 		LOG(VERBOSE) << __func__ << "Sensor Threshold read failure or type not supported.";
 
 	if (out_temp_thresh != nullptr)
@@ -164,12 +185,13 @@ ScopedAStatus Thermal::getTemperatureThresholdsWithType(
 		std::vector<TemperatureThreshold>* out_temp_thresh) {
 
 	std::vector<TemperatureThreshold> thresh;
+	auto utils = utils_.get();
 
-	if (!utils.isSensorInitialized(in_type))
+	if (!utils || !utils->isSensorInitialized(in_type))
 		return ndk::ScopedAStatus::fromExceptionCodeWithMessage(EX_ILLEGAL_STATE,
 					"ThermalHAL given sensor type not initialized.");
 	else{
-		if (utils.readTemperatureThreshold(in_type, thresh) <= 0)
+		if (utils->readTemperatureThreshold(in_type, thresh) <= 0)
 			LOG(VERBOSE) << __func__ << "Sensor Threshold read failure or type not supported.";
 	}
 

@@ -51,6 +51,7 @@ SPDX-License-Identifier: BSD-3-Clause-Clear */
 #endif
 
 #include "thermalData.h"
+#include "thermalProvider.h"
 
 namespace aidl {
 namespace android {
@@ -79,6 +80,7 @@ class Thermal : public BnThermal {
   public:
     Thermal();
     ~Thermal() = default;
+    void startInitialization();
 
     Thermal(const Thermal &) = delete;
     void operator=(const Thermal &) = delete;
@@ -119,7 +121,7 @@ class Thermal : public BnThermal {
     std::mutex cdev_callback_mutex_;
     std::vector<CallbackSetting> cb;
     std::vector<CdevCallbackSetting> cdev_cb;
-    ThermalUtils utils;
+    AsyncProvider<ThermalUtils> utils_;
 };
 
 }  // namespace thermal

@@ -76,6 +76,18 @@ require(
     "ODM thermal executable must embed libc++ instead of resolving against the stock Android 13 vendor runtime",
 )
 
+service = (ROOT / "service.cpp").read_text()
+registration = service.find("AServiceManager_addService")
+registration_check = service.find("CHECK(status == STATUS_OK)")
+initialization = service.find("startInitialization")
+require(registration != -1, "thermal service must register its Binder provider")
+require(registration_check != -1, "thermal service must verify Binder registration")
+require(initialization != -1, "thermal provider initialization must be started")
+require(
+    registration < registration_check < initialization,
+    "sensor/netlink initialization must start only after Binder registration",
+)
+
 odm_rc = (ROOT / "android.hardware.thermal-service.qti.odm.rc").read_text()
 odm_service = re.search(r"^service\s+(\S+)\s+(\S+)$", odm_rc, re.MULTILINE)
 require(odm_service is not None, "ODM thermal init service declaration is missing")
@@ -123,6 +135,14 @@ require(
 require(
     thermal.count("Sensor temperature data is unavailable.") == 2,
     "both temperature APIs must fail when no real sensor value is readable",
+)
+require(
+    thermal.count("auto utils = utils_.get();") == 6,
+    "every sensor and cooling-device read API must take an initialized-provider snapshot",
+)
+require(
+    thermal.count("!utils ||") == 6,
+    "every sensor and cooling-device read API must fail closed while initialization is unavailable",
 )
 
 for utility_name in ("thermalUtils.cpp", "thermalUtilsNetlink.cpp"):
