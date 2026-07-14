@@ -71,6 +71,10 @@ require(
     odm_blueprint.count('"android.hardware.thermal-V2-ndk"') == 1,
     "ODM AIDL NDK bindings must not remain a shared runtime dependency",
 )
+require(
+    'stl: "libc++_static"' in odm_blueprint,
+    "ODM thermal executable must embed libc++ instead of resolving against the stock Android 13 vendor runtime",
+)
 
 odm_rc = (ROOT / "android.hardware.thermal-service.qti.odm.rc").read_text()
 odm_service = re.search(r"^service\s+(\S+)\s+(\S+)$", odm_rc, re.MULTILINE)

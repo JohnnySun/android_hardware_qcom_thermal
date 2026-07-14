@@ -40,6 +40,7 @@ cc_binary {
 	init_rc: ["android.hardware.thermal-service.qti.odm.rc"],
 	vintf_fragments: ["android.hardware.thermal-service.qti.odm.xml"],
 	device_specific: true,
+	stl: "libc++_static",
 	shared_libs: [
 		"libbase",
 		"libbinder_ndk",
