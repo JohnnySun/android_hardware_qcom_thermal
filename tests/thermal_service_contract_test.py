@@ -46,4 +46,25 @@ require(
     "raw kernel headers must not shadow bionic UAPI headers in the thermal HAL",
 )
 
+thermal = (ROOT / "thermal.cpp").read_text()
+require(
+    "dummy_temp_1_0" not in thermal and "Returning Dummy Value" not in thermal,
+    "the production HAL must never report a fabricated temperature",
+)
+require(
+    thermal.count("Sensor temperature data is unavailable.") == 2,
+    "both temperature APIs must fail when no real sensor value is readable",
+)
+
+for utility_name in ("thermalUtils.cpp", "thermalUtilsNetlink.cpp"):
+    utility = (ROOT / utility_name).read_text()
+    require(
+        "cmnInst.initThreshold" not in utility,
+        f"{utility_name} must not rewrite unverified kernel thermal trips",
+    )
+    require(
+        utility.count("Skipping unreadable thermal sensor:") == 2,
+        f"{utility_name} must preserve readable sensors after a peer read failure",
+    )
+
 print("thermal service contract: PASS")

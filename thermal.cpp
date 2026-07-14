@@ -62,13 +62,6 @@ bool interfacesEqual(const std::shared_ptr<::ndk::ICInterface>& left,
 
 }// namespace
 
-static const Temperature dummy_temp_1_0 = {
-	.type = TemperatureType::SKIN,
-	.name = "test sensor",
-	.value = 30,
-	.throttlingStatus = ThrottlingSeverity::NONE,
-};
-
 Thermal::Thermal():
 	utils(std::bind(&Thermal::sendThrottlingChangeCB, this,
 				std::placeholders::_1),
@@ -117,18 +110,13 @@ ScopedAStatus Thermal::getTemperatures(std::vector<Temperature>* out_temp) {
 	LOG(VERBOSE) << __func__;
 	std::vector<Temperature> temperatures;
 
-	if (!utils.isSensorInitialized()) {
-		std::vector<Temperature> _temp = {dummy_temp_1_0};
-		LOG(VERBOSE) << __func__ << " Returning Dummy Value";
-
-		if (out_temp != nullptr)
-			*out_temp = std::move(_temp);
-
-		return ScopedAStatus::ok();
-	}
+	if (!utils.isSensorInitialized())
+		return ndk::ScopedAStatus::fromExceptionCodeWithMessage(EX_ILLEGAL_STATE,
+					"ThermalHAL sensor not initialized.");
 
 	if (utils.readTemperatures(temperatures) <= 0)
-		LOG(VERBOSE) << __func__ << "Sensor Temperature read failure.";
+		return ndk::ScopedAStatus::fromExceptionCodeWithMessage(EX_ILLEGAL_STATE,
+					"Sensor temperature data is unavailable.");
 
 	if (out_temp != nullptr)
 		*out_temp = std::move(temperatures);
@@ -144,10 +132,9 @@ ScopedAStatus Thermal::getTemperaturesWithType(TemperatureType in_type,
 	if (!utils.isSensorInitialized(in_type))
 		return ndk::ScopedAStatus::fromExceptionCodeWithMessage(EX_ILLEGAL_STATE,
 					"ThermalHAL given sensor type Not initialized.");
-	else {
-		if (utils.readTemperatures(in_type, temperatures) <= 0)
-			LOG(VERBOSE) << __func__ << "Sensor Temperature read failure.";
-	}
+	else if (utils.readTemperatures(in_type, temperatures) <= 0)
+		return ndk::ScopedAStatus::fromExceptionCodeWithMessage(EX_ILLEGAL_STATE,
+					"Sensor temperature data is unavailable.");
 
 	if (out_temp != nullptr)
 		*out_temp = std::move(temperatures);

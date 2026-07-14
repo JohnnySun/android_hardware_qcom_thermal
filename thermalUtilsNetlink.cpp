@@ -79,8 +79,6 @@ ThermalUtils::ThermalUtils(const ueventCB &inp_cb, const notifyCB &inp_cdev_cb):
 			thermalConfig[sens.tzn] = sens;
 			cmnInst.read_temperature(sens);
 			cmnInst.estimateSeverity(sens);
-			if (!sens.no_trip_set)
-				cmnInst.initThreshold(sens);
 		}
 	}
 	monitor.start();
@@ -149,8 +147,6 @@ void ThermalUtils::Notify(struct therm_sensor& sens)
 			(int)sens.lastThrottleStatus << " new: " <<
 			(int)sens.t.throttlingStatus << std::endl;
 		cb(sens.t);
-		if (!sens.no_trip_set)
-			cmnInst.initThreshold(sens);
 	}
 }
 
@@ -240,8 +236,6 @@ void ThermalUtils::eventCreateParse(int tzn, const char *name)
 			thermalConfig[sens.tzn] = sens;
 			cmnInst.read_temperature(sens);
 			cmnInst.estimateSeverity(sens);
-			if (!sens.no_trip_set)
-				cmnInst.initThreshold(sens);
 			break;
 		}
 	}
@@ -258,8 +252,11 @@ int ThermalUtils::readTemperatures(std::vector<Temperature>& temp)
 		struct therm_sensor& sens = it->second;
 
 		ret = cmnInst.read_temperature(sens);
-		if (ret < 0)
-			return ret;
+		if (ret < 0) {
+			LOG(WARNING) << "Skipping unreadable thermal sensor: "
+					<< sens.sensor_name;
+			continue;
+		}
 		Notify(sens);
 		_temp.push_back(sens.t);
 	}
@@ -282,8 +279,11 @@ int ThermalUtils::readTemperatures(TemperatureType type,
 		if (sens.t.type != type)
 			continue;
 		ret = cmnInst.read_temperature(sens);
-		if (ret < 0)
-			return ret;
+		if (ret < 0) {
+			LOG(WARNING) << "Skipping unreadable thermal sensor: "
+					<< sens.sensor_name;
+			continue;
+		}
 		Notify(sens);
 		_temp.push_back(sens.t);
 	}
