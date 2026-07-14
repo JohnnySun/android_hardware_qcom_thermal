@@ -1,0 +1,9 @@
+# Copyright (c) 2026 JohnnySun
+# SPDX-License-Identifier: BSD-3-Clause-Clear
+
+service android.thermal-hal /odm/bin/hw/android.hardware.thermal-service.qti
+	interface aidl android.hardware.thermal.IThermal/default
+	class hal
+	user root
+	group root
+	override

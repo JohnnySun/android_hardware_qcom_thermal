@@ -7,6 +7,7 @@ from xml.etree import ElementTree
 
 
 ROOT = Path(__file__).resolve().parents[1]
+AIDL_INTERFACE = "android.hardware.thermal.IThermal/default"
 
 
 def require(condition, message):
@@ -45,6 +46,60 @@ require(
     '"qti_kernel_headers"' not in blueprint,
     "raw kernel headers must not shadow bionic UAPI headers in the thermal HAL",
 )
+
+odm_module = re.search(
+    r'cc_binary\s*\{(?=[^}]*name:\s*"android\.hardware\.thermal-service\.qti\.odm")'
+    r'[^}]*\}',
+    blueprint,
+    re.DOTALL,
+)
+require(odm_module is not None, "ODM thermal service module is missing")
+odm_blueprint = odm_module.group(0)
+require('stem: "android.hardware.thermal-service.qti"' in odm_blueprint,
+        "ODM module must install the canonical thermal service filename")
+require("device_specific: true" in odm_blueprint,
+        "ODM module must install to the ODM partition")
+require('"android.hardware.thermal-service.qti.odm.rc"' in odm_blueprint,
+        "ODM module must use its override init contract")
+require('"android.hardware.thermal-service.qti.odm.xml"' in odm_blueprint,
+        "ODM module must use its HIDL-replacement VINTF contract")
+
+odm_rc = (ROOT / "android.hardware.thermal-service.qti.odm.rc").read_text()
+odm_service = re.search(r"^service\s+(\S+)\s+(\S+)$", odm_rc, re.MULTILINE)
+require(odm_service is not None, "ODM thermal init service declaration is missing")
+require(
+    odm_service.groups()
+    == ("android.thermal-hal", "/odm/bin/hw/android.hardware.thermal-service.qti"),
+    "ODM thermal service must override the exact stock service from /odm",
+)
+require(re.search(r"^\s*override\s*$", odm_rc, re.MULTILINE) is not None,
+        "ODM thermal service must use init override")
+require(
+    re.findall(r"^\s*interface\s+(\S+)\s+(\S+)\s*$", odm_rc, re.MULTILINE)
+    == [("aidl", AIDL_INTERFACE)],
+    "ODM thermal service must expose only the AIDL default interface",
+)
+require(re.search(r"^\s*(?:start|restart)\s+", odm_rc, re.MULTILINE) is None,
+        "ODM override must not add an unproved boot start or restart action")
+
+odm_manifest = ElementTree.parse(ROOT / "android.hardware.thermal-service.qti.odm.xml")
+odm_hals = odm_manifest.getroot().findall("hal")
+require(len(odm_hals) == 2, "ODM VINTF must disable HIDL before declaring AIDL")
+disabled, replacement = odm_hals
+require(disabled.get("format") == "hidl" and disabled.get("override") == "true",
+        "first ODM thermal declaration must be the HIDL override marker")
+require(disabled.findtext("name") == "android.hardware.thermal",
+        "HIDL override marker must target the thermal HAL")
+require(disabled.find("version") is None and disabled.find("fqname") is None,
+        "HIDL override marker must clear every stock thermal version")
+require(replacement.get("format") == "aidl",
+        "second ODM thermal declaration must use AIDL")
+require(replacement.findtext("name") == "android.hardware.thermal",
+        "ODM AIDL replacement has the wrong HAL name")
+require(replacement.findtext("version") == "2",
+        "ODM AIDL replacement must declare version 2")
+require(replacement.findtext("fqname") == "IThermal/default",
+        "ODM AIDL replacement must declare IThermal/default")
 
 thermal = (ROOT / "thermal.cpp").read_text()
 require(
