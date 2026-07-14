@@ -90,6 +90,8 @@ require(disabled.get("format") == "hidl" and disabled.get("override") == "true",
         "first ODM thermal declaration must be the HIDL override marker")
 require(disabled.findtext("name") == "android.hardware.thermal",
         "HIDL override marker must target the thermal HAL")
+require(disabled.findtext("transport") == "hwbinder",
+        "HIDL override marker must remain parseable as a hwbinder HAL")
 require(disabled.find("version") is None and disabled.find("fqname") is None,
         "HIDL override marker must clear every stock thermal version")
 require(replacement.get("format") == "aidl",
