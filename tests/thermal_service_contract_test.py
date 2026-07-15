@@ -156,4 +156,43 @@ for utility_name in ("thermalUtils.cpp", "thermalUtilsNetlink.cpp"):
         f"{utility_name} must preserve readable sensors after a peer read failure",
     )
 
+selftest = (ROOT / "thermal_selftest.cpp").read_text()
+selftest_blueprint = blueprint[blueprint.index('name: "thermal_selftest"') :]
+require(
+    'name: "thermal_selftest"' in blueprint
+    and '"thermal_selftest.cpp"' in blueprint,
+    "Android build must expose the development-only thermal self-test",
+)
+require(
+    'stl: "libc++_static"' not in selftest_blueprint,
+    "thermal self-test must share libc++ with Android vendor libraries",
+)
+require(
+    "AServiceManager_addService" not in selftest
+    and "ABinderProcess_joinThreadPool" not in selftest,
+    "thermal self-test must not register or replace a Binder HAL",
+)
+require(
+    "getTemperatures" in selftest and "getCoolingDevices" in selftest,
+    "thermal self-test must query real provider temperatures and cooling devices",
+)
+require(
+    "kInitializationTimeout" in selftest and "sleep_for" in selftest,
+    "thermal self-test must use a bounded initialization wait",
+)
+require(
+    "std::fflush(nullptr)" in selftest and "std::_Exit(status)" in selftest,
+    "thermal self-test must flush output and avoid blocking monitor destruction",
+)
+for forbidden in (
+    "writeToFile",
+    "initThreshold",
+    "trip_point_",
+    "/sys/",
+):
+    require(
+        forbidden not in selftest,
+        f"thermal self-test must not contain hardware-write surface: {forbidden}",
+    )
+
 print("thermal service contract: PASS")

@@ -104,3 +104,32 @@ cc_fuzz {
     ],
 
 }
+
+cc_binary {
+    name: "thermal_selftest",
+    device_specific: true,
+    shared_libs: [
+        "libbase",
+        "libbinder_ndk",
+        "libcutils",
+        "libutils",
+        "liblog",
+        "libnl",
+    ],
+    static_libs: ["android.hardware.thermal-V2-ndk"],
+    srcs: [
+        "thermal_selftest.cpp",
+        "thermal.cpp",
+        "thermalConfig.cpp",
+        "thermalCommon.cpp",
+        "thermalUtilsNetlink.cpp",
+        "thermalMonitorNetlink.cpp",
+    ],
+    header_libs: ["liblog_headers", "libcutils_headers"],
+    cflags: [
+        "-Wno-unused-parameter",
+        "-Wno-unused-variable",
+        "-DENABLE_THERMAL_NETLINK",
+        "-fexceptions",
+    ],
+}
