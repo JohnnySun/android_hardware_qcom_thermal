@@ -165,7 +165,12 @@ require(
 )
 require(
     'stl: "libc++_static"' not in selftest_blueprint,
-    "thermal self-test must share libc++ with Android vendor libraries",
+    "thermal self-test must share libc++ with the Android 16 runtime",
+)
+require(
+    "system_ext_specific: true" in selftest_blueprint
+    and "device_specific: true" not in selftest_blueprint,
+    "thermal self-test must use the Android 16 system_ext linker domain",
 )
 require(
     "AServiceManager_addService" not in selftest

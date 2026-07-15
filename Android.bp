@@ -107,7 +107,7 @@ cc_fuzz {
 
 cc_binary {
     name: "thermal_selftest",
-    device_specific: true,
+    system_ext_specific: true,
     shared_libs: [
         "libbase",
         "libbinder_ndk",
