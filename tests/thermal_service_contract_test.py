@@ -72,8 +72,8 @@ require(
     "ODM AIDL NDK bindings must not remain a shared runtime dependency",
 )
 require(
-    'stl: "libc++_static"' in odm_blueprint,
-    "ODM thermal executable must embed libc++ instead of resolving against the stock Android 13 vendor runtime",
+    'stl: "libc++_static"' not in odm_blueprint,
+    "ODM thermal executable must share one libc++ runtime with Android vendor libraries",
 )
 
 service = (ROOT / "service.cpp").read_text()
