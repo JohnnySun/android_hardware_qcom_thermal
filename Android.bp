@@ -41,13 +41,9 @@ vintf_fragment {
 cc_binary {
 	name: "android.hardware.thermal-service.qti.system",
 	relative_install_path: "hw",
-	// A plain name, so this build can be proven without a VINTF declaration.
-	cppflags: ["-DODIN_THERMAL_INSTANCE=\"android.hardware.thermal.IThermal/odinprobe\""],
 	init_rc: ["android.hardware.thermal-service.qti.system.rc"],
-	// Declares IThermal/odinprobe, never /default. servicemanager needs some
-	// declaration to accept a VINTF HAL registration at all, and the framework
-	// only ever waits for /default, so this proves the provider without
-	// committing the system server to it.
+	// Declares IThermal/default, which the framework binds in preference to the
+	// stock HIDL provider. Proven first under a non-default instance.
 	vintf_fragment_modules: ["thermal-qti-system-vintf"],
 	shared_libs: [
 		"libbase",

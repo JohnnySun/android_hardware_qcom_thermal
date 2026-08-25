@@ -1,13 +1,12 @@
 # SPDX-License-Identifier: BSD-3-Clause-Clear
 
-# Deliberately late_start and deliberately shipped without a VINTF fragment.
-#
-# ThermalManagerService binds the AIDL HAL with waitForDeclaredService, which
-# blocks. Declaring an instance that then fails to start would hang the system
-# server between the boot trigger and boot-completed, which is exactly how the
-# earlier ODM attempt failed. So this build proves the service runs and answers
-# first, and only a later change declares it.
+# class hal, not late_start. ThermalManagerService binds the AIDL HAL from
+# onActivityManagerReady during system server startup, which runs before
+# late_start, and it binds with waitForDeclaredService, which blocks. A
+# declared instance that starts late would therefore leave the system server
+# waiting between the boot trigger and boot-completed, which is how the earlier
+# ODM attempt failed.
 service thermal-hal-system /system/bin/hw/android.hardware.thermal-service.qti.system
-    class late_start
+    class hal
     user system
     group system
