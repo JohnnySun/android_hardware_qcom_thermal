@@ -33,6 +33,11 @@ cc_binary {
 	],
 }
 
+vintf_fragment {
+	name: "thermal-qti-system-vintf",
+	src: "android.hardware.thermal-service.qti.system.xml",
+}
+
 cc_binary {
 	name: "android.hardware.thermal-service.qti.system",
 	relative_install_path: "hw",
@@ -43,7 +48,7 @@ cc_binary {
 	// declaration to accept a VINTF HAL registration at all, and the framework
 	// only ever waits for /default, so this proves the provider without
 	// committing the system server to it.
-	vintf_fragments: ["android.hardware.thermal-service.qti.system.xml"],
+	vintf_fragment_modules: ["thermal-qti-system-vintf"],
 	shared_libs: [
 		"libbase",
 		"libbinder_ndk",
