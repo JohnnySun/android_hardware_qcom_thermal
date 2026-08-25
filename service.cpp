@@ -39,13 +39,28 @@ int main() {
 	ABinderProcess_setThreadPoolMaxThreadCount(0);
 	std::shared_ptr<Thermal> therm = ndk::SharedRefBase::make<Thermal>();
 
+	// servicemanager refuses to register a HAL-shaped name that VINTF does not
+	// declare, and declaring an instance makes ThermalManagerService block on
+	// it through waitForDeclaredService. A build can therefore be given a plain
+	// service name instead, so the provider can be proven to start and answer
+	// before anything declares it and makes the framework wait.
+#ifdef ODIN_THERMAL_INSTANCE
+	const std::string instance = ODIN_THERMAL_INSTANCE;
+#else
 	const std::string instance = std::string() + Thermal::descriptor + "/default";
+#endif
 
 	if(therm){
 		binder_status_t status =
 		AServiceManager_addService(therm->asBinder().get(), instance.c_str());
 
-		CHECK(status == STATUS_OK);
+		if (status != STATUS_OK) {
+			// Aborting here leaves init restarting a tombstone every few
+			// seconds and says nothing useful.
+			LOG(ERROR) << "could not register " << instance
+				   << "; status=" << status;
+			return EXIT_FAILURE;
+		}
 		therm->startInitialization();
 	}
 
