@@ -37,7 +37,7 @@ cc_binary {
 	name: "android.hardware.thermal-service.qti.system",
 	relative_install_path: "hw",
 	// A plain name, so this build can be proven without a VINTF declaration.
-	cppflags: ["-DODIN_THERMAL_INSTANCE=\\"odin.thermal.probe\\""],
+	cppflags: ["-DODIN_THERMAL_INSTANCE=\"odin.thermal.probe\""],
 	init_rc: ["android.hardware.thermal-service.qti.system.rc"],
 	// No vintf_fragments on purpose: see the rc file. Declaring the instance is
 	// what makes the framework block on it, so that comes in a separate change
