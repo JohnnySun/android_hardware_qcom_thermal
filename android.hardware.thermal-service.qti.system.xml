@@ -1,0 +1,22 @@
+<!-- SPDX-License-Identifier: BSD-3-Clause-Clear -->
+
+<!--
+Declares a deliberately non-default instance.
+
+ThermalManagerService waits for IThermal/default and blocks while it does, so
+declaring that name commits the system server to a service that may not start,
+which is how the earlier ODM attempt hung between the boot trigger and
+boot-completed. servicemanager, meanwhile, refuses to register any VINTF HAL
+under a name it cannot find declared.
+
+An extra instance satisfies servicemanager without the framework ever waiting
+for it, so the provider can be started and queried directly. Only once it
+answers does the instance become default.
+-->
+<manifest version="2.0" type="framework">
+    <hal format="aidl">
+        <name>android.hardware.thermal</name>
+        <version>2</version>
+        <fqname>IThermal/odinprobe</fqname>
+    </hal>
+</manifest>
